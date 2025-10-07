@@ -179,7 +179,14 @@ class Policy(nn.Module, ABC):
     @abstractmethod
     def sample_actions(self, obs):
         raise NotImplementedError('Implement in subclass')
+    
+    def set_schedule_from_epochs(self, num_epochs: int, steps_per_epoch: int) -> None:
+        """Optional: policies that need epoch-based schedules can override."""
+        pass
 
+    def set_global_step(self, step: int) -> None:
+        """Optional: override to restore global step for internal schedules."""
+        self._global_step = step
 
 class ChunkPolicy(Policy):
     '''

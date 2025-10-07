@@ -129,7 +129,7 @@ def save_state(state_dict, path):
     torch.save(save_dict, path)
 
 def load_state(path):
-    return torch.load(path)
+    return torch.load(path, weights_only=False)
 
 def torch_save_model(model, optimizer, scheduler, model_path, cfg=None):
     torch.save(
@@ -145,3 +145,18 @@ def torch_save_model(model, optimizer, scheduler, model_path, cfg=None):
 def torch_load_model(model_path):
     checkpoint = torch.load(model_path)
     return checkpoint["model_state_dict"], checkpoint["optimizer_state_dict"], checkpoint["scheduler_state_dict"], checkpoint["cfg"]
+
+def count_params(module, trainable_only=True):
+    if trainable_only:
+        return sum(p.numel() for p in module.parameters() if p.requires_grad)
+    return sum(p.numel() for p in module.parameters())
+
+def count_params_excluding_prefix(model, exclude_prefixes=("autoencoder.",), trainable_only=True):
+    total = 0
+    for name, p in model.named_parameters():
+        if trainable_only and not p.requires_grad:
+            continue
+        if any(name.startswith(pref) for pref in exclude_prefixes):
+            continue
+        total += p.numel()
+    return total

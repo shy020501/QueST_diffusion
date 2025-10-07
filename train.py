@@ -70,6 +70,8 @@ def main(cfg):
             start_epoch = state_dict['epoch']
             steps = state_dict['steps']
             wandb_id = state_dict['wandb_id']
+            if hasattr(model, "set_global_step"):
+                model.set_global_step(steps)
     else:
         print('starting from scratch')
 
@@ -78,7 +80,12 @@ def main(cfg):
     train_dataloader = instantiate(
         cfg.train_dataloader, 
         dataset=dataset)
-
+    
+    steps_per_epoch = len(train_dataloader)
+    model.set_schedule_from_epochs(
+        num_epochs=cfg.training.n_epochs,
+        steps_per_epoch=steps_per_epoch
+    )
 
     if cfg.rollout.enabled:
         env_runner = instantiate(cfg.task.env_runner)
@@ -86,6 +93,16 @@ def main(cfg):
     
     print('Saving to:', experiment_dir)
     print('Experiment name:', experiment_name)
+
+    tot_all = utils.count_params(model)  # 전체(=autoencoder 포함)
+    tot_noae = utils.count_params_excluding_prefix(model, ("autoencoder.",))
+    print(f"[PARAM] total(all)               : {tot_all/1e6:.2f} M")
+    print(f"[PARAM] total(excl. autoencoder) : {tot_noae/1e6:.2f} M")
+
+    # 있으면 policy_prior도 같이
+    if hasattr(model, "policy_prior"):
+        pp_params = utils.count_params(model.policy_prior)
+        print(f"[PARAM] policy_prior only        : {pp_params/1e6:.2f} M")
 
     wandb.init(
         dir=experiment_dir,

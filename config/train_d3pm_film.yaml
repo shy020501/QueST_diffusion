@@ -1,6 +1,6 @@
 defaults:
   - task: metaworld_ml45
-  - algo: quest
+  - algo: quest_d3pm_film
   - _self_
 
 # set the path to your data and experiments directories
